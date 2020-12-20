@@ -1,0 +1,51 @@
+{
+  "name": "autopilot-processor",
+  "version": "1.0.0",
+  "description": "Topcoder Autopilot - Processor",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "mocha test/unit/test.js --require test/unit/prepare.js --timeout 20000 --exit",
+    "test:cov": "nyc --reporter=html --reporter=text mocha test/unit/test.js --require test/unit/prepare.js --timeout 20000 --exit",
+    "e2e": "mocha test/e2e/test.js --timeout 20000 --exit",
+    "e2e:cov": "nyc --reporter=html --reporter=text mocha test/e2e/test.js --timeout 20000 --exit"
+  },
+  "devDependencies": {
+    "mocha": "^7.1.2",
+    "mocha-prepare": "^0.1.0",
+    "nock": "^12.0.3",
+    "nyc": "^14.1.1",
+    "should": "^13.2.3",
+    "standard": "^12.0.1",
+    "superagent": "^5.1.0"
+  },
+  "dependencies": {
+    "@hapi/joi": "^15.1.0",
+    "axios": "^0.19.2",
+    "bluebird": "^3.5.5",
+    "config": "^3.1.0",
+    "get-parameter-names": "^0.3.0",
+    "lodash": "^4.17.19",
+    "no-kafka": "^3.4.3",
+    "tc-core-library-js": "appirio-tech/tc-core-library-js.git#v2.6",
+    "topcoder-healthcheck-dropin": "^1.0.3",
+    "winston": "^3.2.1"
+  },
+  "engines": {
+    "node": "12.x"
+  },
+  "standard": {
+    "env": [
+      "mocha"
+    ]
+  },
+  "nyc": {
+    "exclude": [
+      "test/common/*.js",
+      "test/unit/*.js",
+      "test/e2e/*.js"
+    ]
+  }
+}
