@@ -1,7 +1,7 @@
 version: '3'
 services:
-  autopilot-processor:
-    image: autopilot-processor:latest
+  scheduler-processor:
+    image: scheduler-processor:latest
     build:
       context: ../
       dockerfile: docker/Dockerfile

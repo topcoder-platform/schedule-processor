@@ -49,7 +49,7 @@ jobs:
     environment:
       DEPLOY_ENV: "DEV"
       LOGICAL_ENV: "dev"
-      APPNAME: "autopilot-processor"    
+      APPNAME: "scheduler-processor"    
     steps: *builddeploy_steps
 
   "build-prod":
@@ -57,7 +57,7 @@ jobs:
     environment:
       DEPLOY_ENV: "PROD"
       LOGICAL_ENV: "prod"    
-      APPNAME: "autopilot-processor"  
+      APPNAME: "scheduler-processor"  
     steps: *builddeploy_steps
 
 workflows:
