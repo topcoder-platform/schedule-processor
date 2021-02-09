@@ -88,17 +88,9 @@ async function getEventsFromScheduleApi (challengeId) {
   logger.debug(`request GET ${url}`)
   try {
     const res = await axios.get(url)
-    return res.data
+    return res.data || []
   } catch (err) {
-    logger.error(err.message)
-
-    if (err.response) {
-      if (err.response.status === 404) {
-        logger.error(`The Challenge with the id: ${challengeId} not exist`)
-        throw getErrorWithStatus('[resource_not_found_exception]', 404)
-      }
-    }
-    throw Error(`get ${url} failed`)
+    return []
   }
 }
 
