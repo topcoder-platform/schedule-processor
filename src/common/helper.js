@@ -110,7 +110,6 @@ function getEventsFromPhases (challenge) {
   const events = []
   const dateBasedEvents = {}
 
-
   for (const phase of challenge.phases) {
     if (!dateBasedEvents[phase.scheduledStartDate]) {
       dateBasedEvents[phase.scheduledStartDate] = []
@@ -203,8 +202,6 @@ module.exports = {
   getChallenge,
   getEventsFromScheduleApi,
   getEventsFromPhases,
-  compareEvents,
-  updateChallenge,
   createEventsInExecutor,
   deleteEventsInExecutor
 }

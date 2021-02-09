@@ -107,9 +107,9 @@ describe('Autopilot Processor Unit Test', () => {
 
   it(`process update success from helper`, async () => {
     const sourceChallenge = await helper.getChallenge(testTopics[0].payload.id)
-    const sourceEvents = helper.getEventsFromPhases(sourceChallenge)
-    const targetEvents = await helper.getEventsFromScheduleApi(testTopics[0].payload.id)
-    const differences = helper.compareEvents(sourceEvents, targetEvents)
-    await helper.updateChallenge(differences)
+    const newEvents = helper.getEventsFromPhases(sourceChallenge)
+    const oldEvents = await helper.getEventsFromScheduleApi(testTopics[0].payload.id)
+    await helper.deleteEventsInExecutor(oldEvents)
+    await helper.createEventsInExecutor(newEvents)
   })
 })

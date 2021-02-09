@@ -12,7 +12,7 @@ Joi.id = () => Joi.string().uuid().required()
  * @param {Object} message the kafka message
  * @returns {Promise}
  */
-async function processCreate(message) {
+async function processCreate (message) {
   // get challenge
   const challenge = await helper.getChallenge(message.payload.id)
   // create events
@@ -28,7 +28,7 @@ async function processCreate(message) {
  * @param {Object} message the kafka message
  * @returns {Promise}
  */
-async function processUpdate(message) {
+async function processUpdate (message) {
   const sourceChallenge = await helper.getChallenge(message.payload.id)
   const newEvents = helper.getEventsFromPhases(sourceChallenge)
   const oldEvents = await helper.getEventsFromScheduleApi(message.payload.id)
