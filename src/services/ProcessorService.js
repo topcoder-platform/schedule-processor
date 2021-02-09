@@ -2,6 +2,7 @@
  * Processor Service
  */
 const Joi = require('@hapi/joi')
+const _ = require('lodash')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
 
@@ -18,6 +19,10 @@ async function processCreate (message) {
   const challenge = await helper.getChallenge(message.payload.id)
   if (!VALID_CHALLENGE_STATUSES.includes(challenge.status)) {
     logger.info(`Not creating events for challenge status ${challenge.status}...`)
+    return
+  }
+  if (!_.get(challenge, 'legacy.useSchedulingAPI')) {
+    logger.info(`The legacy.useSchedulingAPI is not set on challenge ${challenge.id}...`)
     return
   }
   // create events
@@ -37,6 +42,10 @@ async function processUpdate (message) {
   const sourceChallenge = await helper.getChallenge(message.payload.id)
   if (!VALID_CHALLENGE_STATUSES.includes(sourceChallenge.status)) {
     logger.info(`Not creating events for challenge status ${sourceChallenge.status}...`)
+    return
+  }
+  if (!_.get(sourceChallenge, 'legacy.useSchedulingAPI')) {
+    logger.info(`The legacy.useSchedulingAPI is not set on challenge ${sourceChallenge.id}...`)
     return
   }
   const newEvents = helper.getEventsFromPhases(sourceChallenge)
