@@ -53,6 +53,7 @@ function getErrorWithStatus (message, statusCode) {
 /**
  * Get challenge by id
  * @param challengeId the challenge id
+ * @returns {object} challenge
  */
 async function getChallenge (challengeId) {
   const url = `${config.CHALLENGE_API_URL}/${challengeId}`
@@ -77,29 +78,66 @@ async function getChallenge (challengeId) {
 }
 
 /**
+ * Get challenge by id from Schedule Api
+ * @param challengeId the challenge id
+ * @returns {Array} array of events
+ */
+async function getEventsFromScheduleApi (challengeId) {
+  const url = `${config.SCHEDULE_API_URL}?externalId=${challengeId}`
+
+  logger.debug(`request GET ${url}`)
+  try {
+    const res = await axios.get(url)
+    return res.data
+  } catch (err) {
+    logger.error(err.message)
+
+    if (err.response) {
+      if (err.response.status === 404) {
+        logger.error(`The Challenge with the id: ${challengeId} not exist`)
+        throw getErrorWithStatus('[resource_not_found_exception]', 404)
+      }
+    }
+    throw Error(`get ${url} failed`)
+  }
+}
+
+/**
  * Create events from challenge object
  * @param challenge the challenge object
  */
 function getEventsFromPhases (challenge) {
   const events = []
-  // for each phase, create 2 events for the scheduledStartDate and scheduledEndDate respectively
-  for (const phase of challenge.phases) {
-    const event = {
-      phaseId: phase.phaseId,
-      challengeId: challenge.id
-    }
+  const dateBasedEvents = {}
 
-    events.push({
-      ...event,
-      status: 'starting',
-      scheduleTime: phase.scheduledStartDate
+
+  for (const phase of challenge.phases) {
+    if (!dateBasedEvents[phase.scheduledStartDate]) {
+      dateBasedEvents[phase.scheduledStartDate] = []
+    }
+    if (!dateBasedEvents[phase.scheduledEndDate]) {
+      dateBasedEvents[phase.scheduledEndDate] = []
+    }
+    dateBasedEvents[phase.scheduledStartDate].push({
+      phaseId: phase.phaseId,
+      isOpen: true
     })
-    events.push({
-      ...event,
-      status: 'closing',
-      scheduleTime: phase.scheduledEndDate
+    dateBasedEvents[phase.scheduledEndDate].push({
+      phaseId: phase.phaseId,
+      isOpen: false
     })
   }
+
+  _.each(dateBasedEvents, (eventData, scheduleTime) => {
+    events.push({
+      externalId: challenge.id,
+      scheduleTime,
+      payload: {
+        phases: eventData
+      }
+    })
+  })
+
   return events
 }
 
@@ -115,19 +153,15 @@ async function createEventsInExecutor (events) {
     for (const event of events) {
       // schedule executor api payload
       const executorPayload = {
-        url: `${config.CHALLENGE_API_URL}/${event.challengeId}`,
+        url: `${config.CHALLENGE_API_URL}/${event.externalId}`,
+        externalId: event.externalId,
         method: 'patch',
         scheduleTime: event.scheduleTime,
         headers: {
           'content-type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        payload: JSON.stringify({
-          phases: [{
-            phaseId: event.phaseId,
-            isOpen: event.status === 'starting'
-          }]
-        })
+        payload: JSON.stringify(event.payload)
       }
 
       // call executor api
@@ -140,10 +174,37 @@ async function createEventsInExecutor (events) {
   }
 }
 
+/**
+ * Delete events in executor app
+ * @param events the events array
+ */
+async function deleteEventsInExecutor (events) {
+  const url = config.SCHEDULE_API_URL
+  try {
+    for (const event of events) {
+      // schedule executor api payload
+      const executorPayload = {
+        id: event.id
+      }
+
+      // call executor api
+      logger.debug(`request DELETE ${url}`)
+      await axios.delete(`${url}`, { data: executorPayload })
+    }
+  } catch (err) {
+    logger.error(err.message)
+    throw err
+  }
+}
+
 module.exports = {
   getKafkaOptions,
   getTopcoderM2Mtoken,
   getChallenge,
+  getEventsFromScheduleApi,
   getEventsFromPhases,
-  createEventsInExecutor
+  compareEvents,
+  updateChallenge,
+  createEventsInExecutor,
+  deleteEventsInExecutor
 }

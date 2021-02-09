@@ -12,7 +12,7 @@ Joi.id = () => Joi.string().uuid().required()
  * @param {Object} message the kafka message
  * @returns {Promise}
  */
-async function processCreate (message) {
+async function processCreate(message) {
   // get challenge
   const challenge = await helper.getChallenge(message.payload.id)
   // create events
@@ -20,6 +20,22 @@ async function processCreate (message) {
   // call the executor api
   await helper.createEventsInExecutor(events)
 
+  logger.info(`processing of the record completed, id: ${message.payload.id}`)
+}
+
+/**
+ * Process update entity message
+ * @param {Object} message the kafka message
+ * @returns {Promise}
+ */
+async function processUpdate(message) {
+  const sourceChallenge = await helper.getChallenge(message.payload.id)
+  const newEvents = helper.getEventsFromPhases(sourceChallenge)
+  const oldEvents = await helper.getEventsFromScheduleApi(message.payload.id)
+  logger.info(`Deleting existing events for challenge ${message.payload.id}`)
+  await helper.deleteEventsInExecutor(oldEvents)
+  logger.info(`Creating events for challenge ${message.payload.id}`)
+  await helper.createEventsInExecutor(newEvents)
   logger.info(`processing of the record completed, id: ${message.payload.id}`)
 }
 
@@ -34,9 +50,21 @@ processCreate.schema = {
     }).required().unknown(true)
   }).required()
 }
+processUpdate.schema = {
+  message: Joi.object().keys({
+    topic: Joi.string().required(),
+    originator: Joi.string().required(),
+    timestamp: Joi.date().required(),
+    'mime-type': Joi.string().required(),
+    payload: Joi.object().keys({
+      id: Joi.id()
+    }).required().unknown(true)
+  }).required()
+}
 
 module.exports = {
-  processCreate
+  processCreate,
+  processUpdate
 }
 
 logger.buildService(module.exports)

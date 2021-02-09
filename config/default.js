@@ -14,8 +14,9 @@ module.exports = {
   // Kafka group id
   KAFKA_GROUP_ID: process.env.KAFKA_GROUP_ID || 'autopilot-processor',
   NOTIFICATION_CREATE_TOPIC: process.env.NOTIFICATION_CREATE_TOPIC || 'challenge.notification.create',
+  NOTIFICATION_UPDATE_TOPIC: process.env.NOTIFICATION_UPDATE_TOPIC || 'challenge.notification.update',
 
-  SCHEDULE_API_URL: process.env.SCHEDULE_API_URL,
+  SCHEDULE_API_URL: process.env.SCHEDULE_API_URL || 'https://api.topcoder-dev.com/v5/schedules',
   CHALLENGE_API_URL: process.env.CHALLENGE_API_URL || 'https://api.topcoder-dev.com/v5/challenges',
 
   AUTH0_URL: process.env.AUTH0_URL,

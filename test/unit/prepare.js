@@ -9,7 +9,7 @@ const nock = require('nock')
 const prepare = require('mocha-prepare')
 const helper = require('../../src/common/helper')
 
-const { mockChallenge } = require('../common/testData')
+const { mockChallenge, mockEvents } = require('../common/testData')
 
 prepare(async function (done) {
   // get access token
@@ -27,6 +27,15 @@ prepare(async function (done) {
       return [200, mockChallenge]
     })
     .post(uri => uri.includes('schedule'))
+    .reply(200)
+    .get(uri => uri.includes('schedule'))
+    .reply((uri, requestBody) => {
+      if (uri.split('?').pop() !== `challengeID=${mockEvents[0].challengeID}`) return [404]
+      return [200, mockEvents]
+    })
+    .delete(uri => uri.includes('schedule'))
+    .reply(200)
+    .patch(uri => uri.includes('schedule'))
     .reply(200)
   done()
 }, function (done) {
