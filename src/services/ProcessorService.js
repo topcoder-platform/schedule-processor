@@ -6,6 +6,7 @@ const logger = require('../common/logger')
 const helper = require('../common/helper')
 
 Joi.id = () => Joi.string().uuid().required()
+const VALID_CHALLENGE_STATUSES = ['Active']
 
 /**
  * Process create entity message
@@ -15,6 +16,10 @@ Joi.id = () => Joi.string().uuid().required()
 async function processCreate (message) {
   // get challenge
   const challenge = await helper.getChallenge(message.payload.id)
+  if (!VALID_CHALLENGE_STATUSES.includes(challenge.status)) {
+    logger.info(`Not creating events for challenge status ${challenge.status}...`)
+    return
+  }
   // create events
   const events = helper.getEventsFromPhases(challenge)
   // call the executor api
@@ -30,6 +35,10 @@ async function processCreate (message) {
  */
 async function processUpdate (message) {
   const sourceChallenge = await helper.getChallenge(message.payload.id)
+  if (!VALID_CHALLENGE_STATUSES.includes(sourceChallenge.status)) {
+    logger.info(`Not creating events for challenge status ${sourceChallenge.status}...`)
+    return
+  }
   const newEvents = helper.getEventsFromPhases(sourceChallenge)
   const oldEvents = await helper.getEventsFromScheduleApi(message.payload.id)
   logger.info(`Deleting existing events for challenge ${message.payload.id}`)

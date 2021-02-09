@@ -117,24 +117,30 @@ function getEventsFromPhases (challenge) {
     if (!dateBasedEvents[phase.scheduledEndDate]) {
       dateBasedEvents[phase.scheduledEndDate] = []
     }
-    dateBasedEvents[phase.scheduledStartDate].push({
-      phaseId: phase.phaseId,
-      isOpen: true
-    })
-    dateBasedEvents[phase.scheduledEndDate].push({
-      phaseId: phase.phaseId,
-      isOpen: false
-    })
+    if (new Date(phase.scheduledStartDate).getTime() > Date.now()) {
+      dateBasedEvents[phase.scheduledStartDate].push({
+        phaseId: phase.phaseId,
+        isOpen: true
+      })
+    }
+    if (new Date(phase.scheduledEndDate).getTime() > Date.now()) {
+      dateBasedEvents[phase.scheduledEndDate].push({
+        phaseId: phase.phaseId,
+        isOpen: false
+      })
+    }
   }
 
   _.each(dateBasedEvents, (eventData, scheduleTime) => {
-    events.push({
-      externalId: challenge.id,
-      scheduleTime,
-      payload: {
-        phases: eventData
-      }
-    })
+    if (eventData.length > 0) {
+      events.push({
+        externalId: challenge.id,
+        scheduleTime,
+        payload: {
+          phases: eventData
+        }
+      })
+    }
   })
 
   return events
