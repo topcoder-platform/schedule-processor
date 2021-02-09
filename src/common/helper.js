@@ -148,8 +148,8 @@ async function createEventsInExecutor (events) {
   const url = config.SCHEDULE_API_URL
   const token = await getTopcoderM2Mtoken()
 
-  try {
-    for (const event of events) {
+  for (const event of events) {
+    try {
       // schedule executor api payload
       const executorPayload = {
         url: `${config.CHALLENGE_API_URL}/${event.externalId}`,
@@ -166,10 +166,10 @@ async function createEventsInExecutor (events) {
       // call executor api
       logger.debug(`request POST ${url}`)
       await axios.post(`${url}`, executorPayload)
+    } catch (err) {
+      logger.warn(`Failed to create event for external ID ${event.externalId}`)
+      logger.error(err.message)
     }
-  } catch (err) {
-    logger.error(err.message)
-    throw err
   }
 }
 
@@ -179,20 +179,19 @@ async function createEventsInExecutor (events) {
  */
 async function deleteEventsInExecutor (events) {
   const url = config.SCHEDULE_API_URL
-  try {
-    for (const event of events) {
-      // schedule executor api payload
-      const executorPayload = {
-        id: event.id
-      }
-
+  for (const event of events) {
+    // schedule executor api payload
+    const executorPayload = {
+      id: event.id
+    }
+    try {
       // call executor api
       logger.debug(`request DELETE ${url}`)
       await axios.delete(`${url}`, { data: executorPayload })
+    } catch (err) {
+      logger.warn(`Failed to delete event ${event.id}`)
+      logger.error(err.message)
     }
-  } catch (err) {
-    logger.error(err.message)
-    throw err
   }
 }
 
