@@ -109,19 +109,13 @@ function getEventsFromPhases (challenge) {
     if (!dateBasedEvents[phase.scheduledEndDate]) {
       dateBasedEvents[phase.scheduledEndDate] = []
     }
-
-
-
-
-
-    
-    if (new Date(phase.scheduledStartDate).getTime() <= Date.now() && new Date(phase.scheduledEndDate).getTime() <= Date.now()) {
+    if (new Date(phase.scheduledEndDate).getTime() >= Date.now() && !phase.isOpen) {
       dateBasedEvents[phase.scheduledStartDate].push({
         phaseId: phase.phaseId,
         isOpen: true
       })
     }
-    if (new Date(phase.scheduledEndDate).getTime() > Date.now()) {
+    if (new Date(phase.scheduledStartDate).getTime() <= Date.now() && phase.isOpen) {
       dateBasedEvents[phase.scheduledEndDate].push({
         phaseId: phase.phaseId,
         isOpen: false
