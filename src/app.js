@@ -20,8 +20,7 @@ const consumer = new Kafka.GroupConsumer(helper.getKafkaOptions())
  */
 const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, async (m) => {
   const message = m.message.value.toString('utf8')
-  logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${
-    m.offset}; Message: ${message}.`)
+  logger.info(`Handle Kafka event message; Topic: ${topic}; Partition: ${partition}; Offset: ${m.offset}; Message: ${message}.`)
   let messageJSON
   try {
     messageJSON = JSON.parse(message)
@@ -43,8 +42,11 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
   }
 
   try {
-    await ProcessorService.processCreate(messageJSON)
-
+    if (topic === config.NOTIFICATION_CREATE_TOPIC) {
+      await ProcessorService.processCreate(messageJSON)
+    } else {
+      await ProcessorService.processUpdate(messageJSON)
+    }
     logger.debug('Successfully processed message')
   } catch (err) {
     logger.logFullError(err)
@@ -68,7 +70,7 @@ const check = () => {
   return connected
 }
 
-const topics = [config.NOTIFICATION_CREATE_TOPIC]
+const topics = [config.NOTIFICATION_CREATE_TOPIC, config.NOTIFICATION_UPDATE_TOPIC]
 
 logger.info('Starting kafka consumer')
 consumer

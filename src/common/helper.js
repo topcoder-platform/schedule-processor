@@ -53,6 +53,7 @@ function getErrorWithStatus (message, statusCode) {
 /**
  * Get challenge by id
  * @param challengeId the challenge id
+ * @returns {object} challenge
  */
 async function getChallenge (challengeId) {
   const url = `${config.CHALLENGE_API_URL}/${challengeId}`
@@ -77,29 +78,63 @@ async function getChallenge (challengeId) {
 }
 
 /**
+ * Get challenge by id from Schedule Api
+ * @param challengeId the challenge id
+ * @returns {Array} array of events
+ */
+async function getEventsFromScheduleApi (challengeId) {
+  const url = `${config.SCHEDULE_API_URL}?externalId=${challengeId}`
+
+  logger.debug(`request GET ${url}`)
+  try {
+    const res = await axios.get(url)
+    return res.data || []
+  } catch (err) {
+    return []
+  }
+}
+
+/**
  * Create events from challenge object
  * @param challenge the challenge object
  */
 function getEventsFromPhases (challenge) {
   const events = []
-  // for each phase, create 2 events for the scheduledStartDate and scheduledEndDate respectively
-  for (const phase of challenge.phases) {
-    const event = {
-      phaseId: phase.phaseId,
-      challengeId: challenge.id
-    }
+  const dateBasedEvents = {}
 
-    events.push({
-      ...event,
-      status: 'starting',
-      scheduleTime: phase.scheduledStartDate
-    })
-    events.push({
-      ...event,
-      status: 'closing',
-      scheduleTime: phase.scheduledEndDate
-    })
+  for (const phase of challenge.phases) {
+    if (!dateBasedEvents[phase.scheduledStartDate]) {
+      dateBasedEvents[phase.scheduledStartDate] = []
+    }
+    if (!dateBasedEvents[phase.scheduledEndDate]) {
+      dateBasedEvents[phase.scheduledEndDate] = []
+    }
+    if (new Date(phase.scheduledEndDate).getTime() >= Date.now() && !phase.isOpen) {
+      dateBasedEvents[phase.scheduledStartDate].push({
+        phaseId: phase.phaseId,
+        isOpen: true
+      })
+    }
+    if (new Date(phase.scheduledStartDate).getTime() <= Date.now() && phase.isOpen) {
+      dateBasedEvents[phase.scheduledEndDate].push({
+        phaseId: phase.phaseId,
+        isOpen: false
+      })
+    }
   }
+
+  _.each(dateBasedEvents, (eventData, scheduleTime) => {
+    if (eventData.length > 0) {
+      events.push({
+        externalId: challenge.id,
+        scheduleTime,
+        payload: {
+          phases: eventData
+        }
+      })
+    }
+  })
+
   return events
 }
 
@@ -111,32 +146,50 @@ async function createEventsInExecutor (events) {
   const url = config.SCHEDULE_API_URL
   const token = await getTopcoderM2Mtoken()
 
-  try {
-    for (const event of events) {
+  for (const event of events) {
+    try {
       // schedule executor api payload
       const executorPayload = {
-        url: `${config.CHALLENGE_API_URL}/${event.challengeId}`,
+        url: `${config.CHALLENGE_API_URL}/${event.externalId}`,
+        externalId: event.externalId,
         method: 'patch',
         scheduleTime: event.scheduleTime,
         headers: {
           'content-type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        payload: JSON.stringify({
-          phases: [{
-            phaseId: event.phaseId,
-            isOpen: event.status === 'starting'
-          }]
-        })
+        payload: JSON.stringify(event.payload)
       }
 
       // call executor api
       logger.debug(`request POST ${url}`)
       await axios.post(`${url}`, executorPayload)
+    } catch (err) {
+      logger.warn(`Failed to create event for external ID ${event.externalId}`)
+      logger.error(err.message)
     }
-  } catch (err) {
-    logger.error(err.message)
-    throw err
+  }
+}
+
+/**
+ * Delete events in executor app
+ * @param events the events array
+ */
+async function deleteEventsInExecutor (events) {
+  const url = config.SCHEDULE_API_URL
+  for (const event of events) {
+    // schedule executor api payload
+    const executorPayload = {
+      id: event.id
+    }
+    try {
+      // call executor api
+      logger.debug(`request DELETE ${url}`)
+      await axios.delete(`${url}`, { data: executorPayload })
+    } catch (err) {
+      logger.warn(`Failed to delete event ${event.id}`)
+      logger.error(err.message)
+    }
   }
 }
 
@@ -144,6 +197,8 @@ module.exports = {
   getKafkaOptions,
   getTopcoderM2Mtoken,
   getChallenge,
+  getEventsFromScheduleApi,
   getEventsFromPhases,
-  createEventsInExecutor
+  createEventsInExecutor,
+  deleteEventsInExecutor
 }

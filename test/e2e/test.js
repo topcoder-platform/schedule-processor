@@ -162,6 +162,16 @@ describe('Autopilot Processor E2E Test', () => {
     assertDebugMessage(debugLogs, 'Successfully processed message')
   })
 
+  it(`process update success`, async () => {
+    await sendMessage(testTopics[1])
+    await waitJob()
+    assertDebugMessage(debugLogs, `request GET ${config.CHALLENGE_API_URL}/${testTopics[1].payload.id}`)
+    assertDebugMessage(debugLogs, `request GET ${config.SCHEDULE_API_URL}?challengeID=${testTopics[1].payload.id}`)
+    assertInfoMessage(infoLogs, `processing of the record completed, id: ${testTopics[1].payload.id}`)
+    assertDebugMessage(debugLogs, 'EXIT processUpdate')
+    assertDebugMessage(debugLogs, 'Successfully processed message')
+  })
+
   it('Should handle incorrect topic field message', async () => {
     const message = _.cloneDeep(testTopics[0])
     message.topic = 'invalid'

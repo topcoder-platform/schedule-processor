@@ -61,7 +61,7 @@ describe('Autopilot Processor Unit Test', () => {
 
   it(`process create success from helper`, async () => {
     const challenge = await helper.getChallenge(testTopics[0].payload.id)
-    const events = await helper.getEventsFromPhases(challenge)
+    const events = helper.getEventsFromPhases(challenge)
     await helper.createEventsInExecutor(events)
   })
 
@@ -69,7 +69,6 @@ describe('Autopilot Processor Unit Test', () => {
     try {
       let message = _.cloneDeep(testTopics[0])
       delete message.payload.id
-
       await service.processCreate(message)
     } catch (err) {
       assertErrorMessage(errorLogs, '"id" is required')
@@ -96,5 +95,21 @@ describe('Autopilot Processor Unit Test', () => {
       assertErrorMessage(errorLogs, `The Challenge with the id: ${nonexistentId} not exist`)
       assertErrorMessage(errorLogs, 'Error: [resource_not_found_exception]')
     }
+  })
+
+  it(`process update success`, async () => {
+    await service.processUpdate(testTopics[0])
+    assertDebugMessage(debugLogs, `request GET ${config.CHALLENGE_API_URL}/${testTopics[0].payload.id}`)
+    assertDebugMessage(debugLogs, `request GET ${config.SCHEDULE_API_URL}?challengeID=${testTopics[0].payload.id}`)
+    assertInfoMessage(infoLogs, `processing of the record completed, id: ${testTopics[0].payload.id}`)
+    assertDebugMessage(debugLogs, 'EXIT processUpdate')
+  })
+
+  it(`process update success from helper`, async () => {
+    const sourceChallenge = await helper.getChallenge(testTopics[0].payload.id)
+    const newEvents = helper.getEventsFromPhases(sourceChallenge)
+    const oldEvents = await helper.getEventsFromScheduleApi(testTopics[0].payload.id)
+    await helper.deleteEventsInExecutor(oldEvents)
+    await helper.createEventsInExecutor(newEvents)
   })
 })
