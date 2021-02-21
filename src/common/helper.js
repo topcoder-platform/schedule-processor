@@ -154,16 +154,12 @@ async function createEventsInExecutor (events) {
         externalId: event.externalId,
         method: 'patch',
         scheduleTime: event.scheduleTime,
-        headers: {
-          'content-type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
         payload: JSON.stringify(event.payload)
       }
 
       // call executor api
       logger.debug(`request POST ${url}`)
-      await axios.post(`${url}`, executorPayload)
+      await axios.post(`${url}`, executorPayload, { headers: { Authorization: `Bearer ${token}` } })
     } catch (err) {
       logger.warn(`Failed to create event for external ID ${event.externalId}`)
       logger.error(err.message)
