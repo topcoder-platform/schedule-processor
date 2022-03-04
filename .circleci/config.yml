@@ -70,8 +70,7 @@ workflows:
           filters:
             branches:
               only:
-                - develop
-                - dev-circleci
+                - issue_dup
 
       # Production builds are exectuted only on tagged commits to the
       # master branch.
